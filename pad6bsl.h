@@ -72,6 +72,8 @@ typedef struct{
     int BSLMemAccessWarning;
     int slowMode;
     int _CBUS;
+    int reqNo;
+    int seqNo;
     bool usb;
 } BSLlowlevel;
 
@@ -89,18 +91,22 @@ typedef struct {
     int retransmitPasswd;
 } PAD6BootStrapLoader;
 
+typedef struct {
+    unsigned char *rxHeader;
+    unsigned char *rxNum;
+} RxHeader;
 
 extern PAD6BootStrapLoader bslobj;
 
 unsigned short calcChecksum(char* data, int length);
 
-// BSL* initBSL(int aTimeout, int aProlongFactor);
-
-void comRxHeader(void);
+// BSL* comInit(int aTimeout, int aProlongFactor);
 
 void comDone(void);
 
-unsigned char* comRxFrame(int rxNum);
+RxHeader* comRxHeader(void);
+
+unsigned char* comRxFrame(unsigned char* rxNum);
 
 // void comTxHeader(unsigned char txHeader); unused?
 
@@ -114,7 +120,7 @@ void bslReset(int invokeBSL);
 
 void bslSync(int wait);
 
-void bslTxRx(unsigned int cmd, unsigned long addr, unsigned int length=0, char* blkout=NULL, int wait=0, bool sync);
+void bslTxRx(unsigned int cmd, unsigned long addr, unsigned int length, char* blkout, int wait, bool sync);
 
 void setDebug(int debug);
 
@@ -154,7 +160,7 @@ void actionSegmentErase(unsigned long address);
 
 // actionDownloadBSL(); only used inside another unused function?
 
-void actionDownWatchDogReset(Memory bslsegments, unsigned int startAddress=NULL);
+void actionDownWatchDogReset(Memory bslsegments, unsigned int startAddress);
 
 // void actionEraseCheck(void); unused?
 

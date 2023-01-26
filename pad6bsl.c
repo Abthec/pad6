@@ -1,4 +1,8 @@
 #include "pad6bsl.h"
+#include "serialftd.h"
+
+SerialFTD serialFtd;
+Port port;
 
 unsigned short calcChecksum(char* data, int length) 
 {
@@ -18,11 +22,29 @@ void comDone(void)
         SetTESTpin(0);
     }
     if (bslobj.lowLevel.usb == 1) {
-        FT_SetBitMode();
+        FT_SetBitMode(serialFtd.ftHandle, 0x00, 0x20);
     }
+    close();
 }
 
-void comRxHeader(void) 
+RxHeader* comRxHeader(void) 
 {
+    RxHeader *header = (RxHeader*)malloc(sizeof(RxHeader));
+    unsigned char *hdr = read(1);
+    memcpy((*header).rxHeader, hdr+4, 4);
+    memcpy((*header).rxNum, hdr, 4);
 
+    if (bslobj.lowLevel.protocolMode == MODE_BSL) {
+        bslobj.lowLevel.seqNo = 0;
+        bslobj.lowLevel.reqNo = 0;
+        memset((*header).rxNum, 0, sizeof(unsigned char)*4);
+    }
+    return header;
+}
+
+unsigned char* comRxFrame(unsigned char* rxNum)
+{
+    unsigned char* rxFrame = DATA_FRAME | *rxNum;
+    unsigned char* rxFrameData = read(3);
+    
 }
