@@ -109,24 +109,28 @@ void close(void)
 unsigned char* read(int size)
 {
     unsigned long read_count;
-    char *buffer;
+    unsigned char* buffer;
     
     if (size==NULL) {
         size = 1;
     }
     if (serialFtd.isOpen) {
-        buffer = (unsigned char *) malloc(size * sizeof(unsigned char));
-        serialFtd.ftStatus = FT_READ(serialFtd.ftHandle, buffer, size, read_count);
+        buffer = malloc(size * sizeof(unsigned char));
+        for (int i=0; i<size; i++) {
+            serialFtd.ftStatus = FT_READ(serialFtd.ftHandle, (buffer+(i*8)), size, read_count);
+        }
+        
+        
     }
 
     return buffer;
 }
 
-unsigned long write(unsigned char* data)
+unsigned long write(unsigned char* data, int length)
 {
     unsigned long bytes_written;
     if (serialFtd.isOpen) {
-        serialFtd.ftStatus = (serialFtd.ftHandle, data, sizeof(data), bytes_written);
+        serialFtd.ftStatus = (serialFtd.ftHandle, data, length, bytes_written);
     }
     return bytes_written;
 }

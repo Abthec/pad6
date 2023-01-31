@@ -1,4 +1,3 @@
-
 #ifndef PAD6BSL_H
 #define PAD6BSL_H
 
@@ -13,6 +12,8 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <unistd.h>
+#include "serialftd.h"
 #include "ftd2xx.h"
 #include "memory.h"
 
@@ -57,21 +58,26 @@
 
 #define MAXDATA 224
 
+#define RX_FRAME_IN 3
+#define RX_FRAME_LENGTH 4
+
+#define TX_FRAME_LENGTH 4
+
 #define F1x "F1x family"
 #define F2x "F2x family"
 #define F4x "F4x family"
 
 typedef struct{
-    int invertRST;
-    int invertTEST;
-    int swapResetTest;
+    bool invertRST;
+    bool invertTEST;
+    bool swapResetTest;
     int testOnTX;
     int ignoreAnswer;
     int allowNAK;
     int protocolMode;
     int BSLMemAccessWarning;
     int slowMode;
-    int _CBUS;
+    unsigned char* _CBUS;
     int reqNo;
     int seqNo;
     bool usb;
@@ -79,6 +85,7 @@ typedef struct{
 
 typedef struct {
     BSLlowlevel lowLevel;
+    SerialFTD serialFtd;
     int byteCtr;
     int meraseCycles;
     int patchRequired;
@@ -89,6 +96,7 @@ typedef struct {
     int maxData;
     char* cpu;
     int retransmitPasswd;
+    int DEBUG;
 } PAD6BootStrapLoader;
 
 typedef struct {
@@ -96,9 +104,19 @@ typedef struct {
     unsigned char *rxNum;
 } RxHeader;
 
+// typedef struct {
+//     RxHeader rxHeader;
+
+// } RxFrame;
+
+// typedef struct {
+//     uint16_t addr;
+//     uint16_t length;
+// } DataOut;
+
 extern PAD6BootStrapLoader bslobj;
 
-unsigned short calcChecksum(char* data, int length);
+unsigned short calcChecksum(unsigned char* data, int length);
 
 // BSL* comInit(int aTimeout, int aProlongFactor);
 
@@ -110,21 +128,21 @@ unsigned char* comRxFrame(unsigned char* rxNum);
 
 // void comTxHeader(unsigned char txHeader); unused?
 
-int comTxRx(unsigned char cmd, unsigned char* dataOut, int length);
+unsigned char* comTxRx(unsigned char* cmd, unsigned char* dataOut, unsigned char* lengthChar, int length);
 
-void SetRSTpin(int level);
+void setRSTpin(int level);
 
-void SetTESTpin(int level);
+void setTESTpin(int level);
 
-void bslReset(int invokeBSL);
+void bslReset(bool invokeBSL);
 
 void bslSync(int wait);
 
-void bslTxRx(unsigned int cmd, unsigned long addr, unsigned int length, char* blkout, int wait, bool sync);
+unsigned char* bslTxRx(unsigned char* cmd, unsigned char* addr, unsigned char* length, unsigned char* blkout, int wait, bool sync);
 
 void setDebug(int debug);
 
-void comInitK(char* port, int baud, int usb);
+void comInitK(unsigned char* port, int baud, bool usb);
 
 void programData(Memory segments, int action);
 

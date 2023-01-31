@@ -1,12 +1,10 @@
-
-
 #ifndef MEMORY_H
 #define MEMORY_H
 
 #define DEBUG 0
 
 typedef struct {
-    char* data;
+    unsigned char* data;
     unsigned long startAddress;
 } Segment;
 

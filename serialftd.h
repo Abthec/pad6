@@ -34,7 +34,6 @@ enum STOPBITS {
 typedef struct {
     int index;
     char* description;
-    int usb;
 } Port;
 
 typedef struct {
@@ -46,10 +45,12 @@ typedef struct {
     unsigned int parity;
     unsigned int stopBits;
     unsigned int orgTimeout;
+    float timeout;
     bool xonxoff;
     bool rtscts;
     bool dsrdtr;
     bool isOpen;
+    bool breakCondition;
 } SerialFTD;
 
 extern SerialFTD serialFtd;
@@ -65,7 +66,7 @@ void close(void);
 
 unsigned char* read(int size);
 
-unsigned long write(unsigned char* data);
+unsigned long write(unsigned char* data, int length);
 
 void flushInput(void);
 
