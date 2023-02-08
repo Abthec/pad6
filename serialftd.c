@@ -1,10 +1,8 @@
-#include "serialftd.h"
+#include "serialFtd.h"
 
 void open_ft_device_id(int index)
 {
     serialFtd.ftStatus = FT_Open(index, &(serialFtd.ftHandle));
-
-    serialFtd.orgTimeout = (serialFtd.ftHandle, DEFAULT_BUF_SIZE, DEFAULT_BUF_SIZE);
 
     reconfigure_port();
 
@@ -14,7 +12,7 @@ void open_ft_device_id(int index)
     serialFtd.isOpen = true;
 }
 
-void open(char* description)
+void open_with_description(unsigned char* description)
 {
     serialFtd.ftStatus = FT_OpenEx(description, FT_OPEN_BY_DESCRIPTION, &(serialFtd.ftHandle));
 
@@ -33,6 +31,8 @@ void reconfigure_port(void)
     FTTIMEOUTS ftimeouts = {5000, 5000, 5000, 5000, 5000};
     FT_W32_SetCommTimeouts(serialFtd.ftHandle, &ftimeouts);
     FT_W32_SetCommMask(serialFtd.ftHandle, WIN32_EV_ERR);
+
+    serialFtd.orgTimeout = &ftimeouts;
 
     FTDCB comDCB;
     FT_W32_GetCommState(serialFtd.ftHandle, &comDCB);
@@ -86,15 +86,15 @@ void reconfigure_port(void)
     comDCB.fNull = 0;
     comDCB.fErrorChar = 0;
     comDCB.fAbortOnError = 0;
-    comDCB.XonChar = "N";
-    comDCB.XoffChar = "F";
+    comDCB.XonChar = 'N';
+    comDCB.XoffChar = 'F';
     
     FT_W32_SetCommState(serialFtd.ftHandle, &comDCB);
 
 }
 
 
-void close(void)
+void close_ftdi_device(void)
 {
     if (serialFtd.isOpen) {
         if (serialFtd.ftHandle) {
@@ -106,27 +106,27 @@ void close(void)
     }
 }
 
-unsigned char* read(int size)
+unsigned char* read_from_ftdi(int size)
 {
     unsigned long read_count;
     unsigned char* buffer;
     
-    if (size==NULL) {
+    if (size<=1) {
         size = 1;
     }
     if (serialFtd.isOpen) {
         buffer = malloc(size * sizeof(unsigned char));
         for (int i=0; i<size; i++) {
-            serialFtd.ftStatus = FT_READ(serialFtd.ftHandle, (buffer+(i*8)), size, read_count);
+            serialFtd.ftStatus = FT_Read(serialFtd.ftHandle, (buffer+(i*8)), size, &read_count);
         }
-        
-        
     }
+
+    printf("Bytes read from device = %d\n", read_count);
 
     return buffer;
 }
 
-unsigned long write(unsigned char* data, int length)
+unsigned long write_to_ftdi(unsigned char* data, int length)
 {
     unsigned long bytes_written;
     if (serialFtd.isOpen) {
@@ -152,6 +152,6 @@ void flushOutput(void)
 unsigned long getNumDevices(void)
 {
     unsigned long numDevs;
-    serialFtd.ftStatus = FT_CreateDeviceInfoList(numDevs); 
+    serialFtd.ftStatus = FT_CreateDeviceInfoList(&numDevs); 
     return numDevs;
 }

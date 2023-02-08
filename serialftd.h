@@ -39,12 +39,12 @@ typedef struct {
 typedef struct {
     FT_HANDLE ftHandle;
     FT_STATUS ftStatus;
+    FTTIMEOUTS* orgTimeout;
     Port port;
     unsigned int baudrate;
     unsigned int byteSize;
     unsigned int parity;
     unsigned int stopBits;
-    unsigned int orgTimeout;
     float timeout;
     bool xonxoff;
     bool rtscts;
@@ -54,19 +54,18 @@ typedef struct {
 } SerialFTD;
 
 extern SerialFTD serialFtd;
-extern Port port;
 
 void open_ft_device_id(int index);
 
-void open(char* description);
+void open_with_description(unsigned char* description);
 
 void reconfigure_port(void);
 
-void close(void);
+void close_ftdi_device(void);
 
-unsigned char* read(int size);
+unsigned char* read_from_ftdi(int size);
 
-unsigned long write(unsigned char* data, int length);
+unsigned long write_to_ftdi(unsigned char* data, int length);
 
 void flushInput(void);
 

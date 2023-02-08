@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <string.h>
 #include "serialftd.h"
 #include "ftd2xx.h"
 #include "memory.h"
@@ -54,7 +55,7 @@
 
 #define ACTION_PROGRAM 0x01
 #define ACTION_VERIFY 0x02
-#define ACTION_ERASE_CHECL 0x03
+#define ACTION_ERASE_CHECK 0x04
 
 #define MAXDATA 224
 
@@ -67,7 +68,7 @@
 #define F2x "F2x family"
 #define F4x "F4x family"
 
-typedef struct{
+typedef struct {
     bool invertRST;
     bool invertTEST;
     bool swapResetTest;
@@ -86,17 +87,17 @@ typedef struct{
 typedef struct {
     BSLlowlevel lowLevel;
     SerialFTD serialFtd;
+    Memory data;
     int byteCtr;
     int meraseCycles;
     int patchRequired;
-    int patchLoaded;
     int bslVer;
-    char* passwd;
-    char* data;
     int maxData;
-    char* cpu;
     int retransmitPasswd;
-    int DEBUG;
+    int debug;
+    char* passwd;
+    char* cpu;
+    bool patchLoaded;
 } PAD6BootStrapLoader;
 
 typedef struct {
@@ -104,29 +105,17 @@ typedef struct {
     unsigned char *rxNum;
 } RxHeader;
 
-// typedef struct {
-//     RxHeader rxHeader;
-
-// } RxFrame;
-
-// typedef struct {
-//     uint16_t addr;
-//     uint16_t length;
-// } DataOut;
-
 extern PAD6BootStrapLoader bslobj;
 
 unsigned short calcChecksum(unsigned char* data, int length);
 
-// BSL* comInit(int aTimeout, int aProlongFactor);
+void initLowLevel(void);
 
 void comDone(void);
 
 RxHeader* comRxHeader(void);
 
 unsigned char* comRxFrame(unsigned char* rxNum);
-
-// void comTxHeader(unsigned char txHeader); unused?
 
 unsigned char* comTxRx(unsigned char* cmd, unsigned char* dataOut, unsigned char* lengthChar, int length);
 
@@ -136,13 +125,15 @@ void setTESTpin(int level);
 
 void bslReset(bool invokeBSL);
 
-void bslSync(int wait);
+void bslSync(void);
 
 unsigned char* bslTxRx(unsigned char* cmd, unsigned char* addr, unsigned char* length, unsigned char* blkout, int wait, bool sync);
 
+void initBSLobj(void);
+
 void setDebug(int debug);
 
-void comInitK(unsigned char* port, int baud, bool usb);
+void comInitK(Port port, int baud, bool usb);
 
 void programData(Memory segments, int action);
 
@@ -150,48 +141,22 @@ void preparePatch(void);
 
 void postPatch(void);
 
-void verifyBlk(unsigned long addr, char* blkout, int action);
+void verifyBlk(unsigned char* addr, unsigned char* blkout, unsigned char* strLength, int action);
 
-void programBlk(unsigned long addr, char* blkout, int action);
+void programBlk(unsigned char* addr, unsigned char* blkout, int action);
 
-// void programBlock(unsigned long addr, char* data); unused?
+unsigned char* uploadData(unsigned char* startAddress, int size);
 
-char* uploadData(unsigned long startAddress, int size, int wait);
-
-void txPasswd(char* passwd, int wait);
-
-// void actionUnlockInfoA(void); unused?
+void txPasswd(unsigned char* passwd);
 
 void actionMassErase(void);
 
-// void actionMainErase(bool sync=true);
-
 void actionInfoErase(void);
 
-void actionSegmentErase(unsigned long address);
+void actionSegmentErase(unsigned char* address);
 
-// makeActionSegmentErase(); not sure what this actually does
-
-// void actionStartBSL(int usepatch, int adjsp, Memory replacementBSL, int forseBSL, int mayuseBSL, int bslreset); unused?
-
-// actionGetDeviceID(); unused?
-
-// actionDownloadBSL(); only used inside another unused function?
-
-void actionDownWatchDogReset(Memory bslsegments, unsigned int startAddress);
-
-// void actionEraseCheck(void); unused?
+void actionDownWatchDogReset(Memory bslsegments, unsigned char* startAddress);
 
 void actionProgram(void);
-
-// void actionVerify(void); unused?
-
-// void actionReset(void); unused?
-
-// void actionRun(unsigned int address=0x220); unused?
-
-// void actionChangeBaudRate(int baudrate=9600, bool sync=true); only used in another unused function?
-
-// char* actionReadBSLVersion(bool sync=true); unused?
 
 #endif /* PAD6BSL_H */
