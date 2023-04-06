@@ -22,7 +22,7 @@ void initLowLevel(void)
     bslobj.lowLevel.protocolMode = MODE_BSL;
     bslobj.lowLevel.BSLMemAccessWarning = 0;
     bslobj.lowLevel.slowMode = 0;
-    bslobj.lowLevel._CBUS = (unsigned char*)0x70;
+    bslobj.lowLevel._CBUS = 0x70;
     bslobj.lowLevel.usb = false;
 
 }
@@ -34,7 +34,7 @@ void comDone(void)
         setTESTpin(0);
     }
     if (bslobj.lowLevel.usb == 1) {
-        FT_SetBitMode(bslobj.serialFtd.ftHandle, 0x00, 0x20);
+        FT_SetBitMode(bslobj.serialFtd->ftHandle, 0x00, 0x20);
     }
     close_ftdi_device();
 }
@@ -174,7 +174,6 @@ unsigned char* comTxRx(unsigned char* cmd, unsigned char* dataOut, unsigned char
 
 void setRSTpin(int level) 
 {
-    printf("RST lvl=%d\n", level);
     if (bslobj.lowLevel.invertRST) {
         if (level == 0) {
             level = 1;
@@ -182,17 +181,18 @@ void setRSTpin(int level)
             level = 0;
         }
     }
+    printf("RST lvl=%d\n", level);
 
-    uint16_t mask = (uint16_t)bslobj.lowLevel._CBUS;
+    uint16_t mask = bslobj.lowLevel._CBUS;
 
-    if (level > 0) {
+    if (level != 0) {
         mask |= 0x22;
     } else {
         mask &= ~0x02;
     }
 
-    FT_SetBitMode(serialFtd.ftHandle, mask, 0x20);
-    bslobj.lowLevel._CBUS = (unsigned char*)mask;
+    FT_SetBitMode(bslobj.serialFtd->ftHandle, mask, 0x20);
+    bslobj.lowLevel._CBUS = mask;
 
     sleep(0.010);
 }
@@ -215,8 +215,8 @@ void setTESTpin(int level)
         mask &= ~0x44;
     }
 
-    FT_SetBitMode(serialFtd.ftHandle, mask, 0x20);
-    bslobj.lowLevel._CBUS = (unsigned char*)mask;
+    FT_SetBitMode(bslobj.serialFtd->ftHandle, mask, 0x20);
+    bslobj.lowLevel._CBUS = mask;
 
     sleep(0.010);
 }
@@ -237,7 +237,7 @@ void bslReset(bool invokeBSL)
         setTESTpin(0);
         setRSTpin(1);
         if (bslobj.lowLevel.testOnTX) {
-            serialFtd.breakCondition = false;
+            bslobj.serialFtd->breakCondition = false;
         } else {
             setTESTpin(1);
         }
@@ -362,25 +362,29 @@ void comInitK(Port port, int baud, bool usb)
     bslobj.lowLevel.reqNo = 0;
 
     bslobj.lowLevel.usb = usb;
-    bslobj.serialFtd.port = port;
+    bslobj.serialFtd->port = port;
 
     if (usb) {
         if (port.description) {
-            bslobj.serialFtd.baudrate = baud;
-            bslobj.serialFtd.parity = PARITY_NONE;
-            bslobj.serialFtd.timeout = 0.2;
+            bslobj.serialFtd->baudrate = baud;
+            bslobj.serialFtd->parity = PARITY_NONE;
+            bslobj.serialFtd->timeout = 0.2;
         }
+        open_with_description(port.description);
     } else if (!usb) {
         if (port.index) {
-            bslobj.serialFtd.baudrate = baud;
-            bslobj.serialFtd.parity = PARITY_NONE;
-            bslobj.serialFtd.timeout = 0.2;
+            bslobj.serialFtd->baudrate = baud;
+            bslobj.serialFtd->parity = PARITY_NONE;
+            bslobj.serialFtd->timeout = 0.2;
         }
         open_ft_device_id(port.index);
     }
 
-    setRSTpin(0);
-    setTESTpin(1);
+    printf("Serial Baud @BSL = %d\n", bslobj.serialFtd->baudrate);
+
+    // setRSTpin(0);
+    setRSTpin(1);
+    setTESTpin(0);
 
     flushInput();
     flushOutput();

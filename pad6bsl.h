@@ -78,7 +78,7 @@ typedef struct {
     int protocolMode;
     int BSLMemAccessWarning;
     int slowMode;
-    unsigned char* _CBUS;
+    uint16_t _CBUS;
     int reqNo;
     int seqNo;
     bool usb;
@@ -86,7 +86,7 @@ typedef struct {
 
 typedef struct {
     BSLlowlevel lowLevel;
-    SerialFTD serialFtd;
+    SerialFTD* serialFtd;
     Memory data;
     int byteCtr;
     int meraseCycles;
@@ -106,6 +106,7 @@ typedef struct {
 } RxHeader;
 
 extern PAD6BootStrapLoader bslobj;
+extern SerialFTD serialFtd;
 
 unsigned short calcChecksum(unsigned char* data, int length);
 

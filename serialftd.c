@@ -4,12 +4,22 @@ void open_ft_device_id(int index)
 {
     serialFtd.ftStatus = FT_Open(index, &(serialFtd.ftHandle));
 
+    printf("FT_HANDLE @SerialFtd = %d\n", serialFtd.ftHandle);
+
+    if (serialFtd.ftStatus == FT_OK) {
+        serialFtd.isOpen = true;
+    } else {
+        serialFtd.isOpen = false;
+    }
+
+    FT_W32_SetupComm(serialFtd.ftHandle, DEFAULT_BUF_SIZE, DEFAULT_BUF_SIZE);
+
     reconfigure_port();
 
     FT_W32_PurgeComm(serialFtd.ftHandle, FT_PURGE_RX);
     FT_W32_PurgeComm(serialFtd.ftHandle, FT_PURGE_TX);
 
-    serialFtd.isOpen = true;
+    
 }
 
 void open_with_description(unsigned char* description)
@@ -28,7 +38,7 @@ void open_with_description(unsigned char* description)
 
 void reconfigure_port(void) 
 {
-    FTTIMEOUTS ftimeouts = {5000, 5000, 5000, 5000, 5000};
+    FTTIMEOUTS ftimeouts = {1000, 1000, 1000, 1000, 1000};
     FT_W32_SetCommTimeouts(serialFtd.ftHandle, &ftimeouts);
     FT_W32_SetCommMask(serialFtd.ftHandle, WIN32_EV_ERR);
 
@@ -36,9 +46,15 @@ void reconfigure_port(void)
 
     FTDCB comDCB;
     FT_W32_GetCommState(serialFtd.ftHandle, &comDCB);
-    comDCB.BaudRate = serialFtd.baudrate;
-    comDCB.ByteSize = serialFtd.byteSize;
+
+    printf("Serial Baud = %d\n", serialFtd.baudrate);
+
+    comDCB.BaudRate = 300;
+    // comDCB.ByteSize = serialFtd.byteSize;
+    comDCB.ByteSize = 8;
     comDCB.fBinary = 1;
+
+    printf("Serial Parity = %d\n", serialFtd.parity);
 
     switch(serialFtd.parity) 
     {
@@ -68,6 +84,8 @@ void reconfigure_port(void)
             break;
     }
 
+    printf("Serial StopBits = %d\n", serialFtd.stopBits);
+
     switch (serialFtd.stopBits)
     {
     case STOPBITS_ONE:
@@ -81,8 +99,8 @@ void reconfigure_port(void)
         break;
     }
 
-    comDCB.fOutX = serialFtd.xonxoff;
-    comDCB.fInX = serialFtd.xonxoff;
+    // comDCB.fOutX = serialFtd.xonxoff;
+    // comDCB.fInX = serialFtd.xonxoff;
     comDCB.fNull = 0;
     comDCB.fErrorChar = 0;
     comDCB.fAbortOnError = 0;
@@ -116,9 +134,7 @@ unsigned char* read_from_ftdi(int size)
     }
     if (serialFtd.isOpen) {
         buffer = malloc(size * sizeof(unsigned char));
-        for (int i=0; i<size; i++) {
-            serialFtd.ftStatus = FT_Read(serialFtd.ftHandle, (buffer+(i*8)), size, &read_count);
-        }
+        serialFtd.ftStatus = FT_Read(serialFtd.ftHandle, buffer, size, &read_count);
     }
 
     printf("Bytes read from device = %d\n", read_count);
@@ -130,7 +146,9 @@ unsigned long write_to_ftdi(unsigned char* data, int length)
 {
     unsigned long bytes_written;
     if (serialFtd.isOpen) {
-        serialFtd.ftStatus = (serialFtd.ftHandle, data, length, bytes_written);
+        serialFtd.ftStatus = FT_Write(serialFtd.ftHandle, data, length, &bytes_written);
+    } else {
+        printf("Serial Is Closed => Write Failed");
     }
     return bytes_written;
 }
